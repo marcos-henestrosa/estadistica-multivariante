@@ -10,13 +10,15 @@ library("scatterplot3d")
 library("tidyr")
 
 
-SLT <- read_excel("Tarea_Glaucoma_DB.xlsx", sheet = "SLT")
+SLT <- read_excel("Excel_variables_añadidas.xlsx", sheet = "SLT")
 
 class(SLT) #es dataframe
 
 names(SLT) <- c("fechaslt", "sexo", "edad", "ojo", "glaucoma", "nimpactos", "cuadrantes", 
                 "enerimpac", "enertotal", "cirugias", "piopre", "piosem", "piomes", "pio3mes", 
-                "medprev", "medmes", "med3mes", "dolor")
+                "medprev", "medmes", "med3mes", "dolor","dif1sem","dif1mes","dif3mes")
+
+#Estoy tomando el excel con las variables añadidas al final(bajada o subida de pio en porcentaje)
 
 sapply(SLT, class) #vemos de que tipo es cada variable
 #Tenemos 8 variables numéricas. Además, el número de cuadrantes realizados, energía por impacto y 
@@ -34,6 +36,9 @@ SLT$enerimpac <- gsub(",", ".", SLT$enerimpac)      # comas decimales -> punto
 SLT$enerimpac <- sub("[^0-9.].*$", "", SLT$enerimpac)  # corta desde el primer carácter raro
 SLT$enerimpac <- as.numeric(SLT$enerimpac) #convertimos a numero
 #vamos a ver si tenemos una muestra representativa de los distintos glaucomas o si tenemos que ajustar o descartar
+
+#TODO: Limpiar también las nuevas variables añadidas (las tres últimas)
+
 
 freq(SLT$glaucoma) #salvo 4 tipos de glaucomas, el resto solo tienen menos de tres observaciones, pero si nos fijamos,
 #muchas de las categorias estan simplemente mal introducidas o son diagnosticos dudosos (como el que tiene "?").
@@ -58,7 +63,9 @@ SLT$glaucoma[SLT$glaucoma == "miópico"] <- "otros"
 freq(SLT$glaucoma) #los datos quedan mucho mas resumidos
 descr(SLT)
 summary(SLT)
+
 #TODO: queremos añadir información de summary y descr como la desviacion tipica pero en descr hay demasiados datos
+
 #VISUALES 
 #En esta parte, dibujamos histogramas, boxplots, diagramas de barras y 'piecharts' para ver como
 # son los SLT con los que estamos trabajando 
@@ -108,6 +115,7 @@ p3 <- ggplot(SLT,aes(x = `enertotal`)) + geom_histogram(bins = 15, fill = "green
   labs(title = "Histograma", x = "enertotal", y = "Frecuencia") + theme_bw()
 
 ggarrange(p1,p2,p3, nrow = 1, common.legend = FALSE)
+
 #TODO: dejamos o quitamos los graficos de nimpactos, enertotal y enerimpac? Tener en cuenta que dependen 
 #funcionalmente dos a uno
 
@@ -119,8 +127,10 @@ p1 <- ggplot(SLT, aes(x= factor(1), fill = `cirugias`))+
 ggarrange(p1,nrow = 1, common.legend = TRUE)
 
 #8 PIO PRE STL
+
 #TODO: meter una raya vertical en 22 y decir que la mayoria si necesitan como minimo tratamiento. Hacer esto para 
 #piosem, piomes, pio3mes
+
 p1 <- ggplot(SLT, aes(x = `piopre`))+geom_density(fill = "skyblue", alpha = 0.6) + 
   labs(title = "Densidad", x = "piopre", y = "Densidad") + theme_bw()
 
@@ -235,8 +245,13 @@ ggplot(medias_largo, aes(x = momento, y = media,
                          color = glaucoma, group = glaucoma)) +
   geom_line()
 medias_largo
-#TODO: añadir el grafico pero para los porcentajes
+
+#TODO: añadir el mismo gráfico pero para los porcentajes (respecto de las últimas variables).
+
+#TODO: realizar ambos gráficos de nuevo pero estudiando cirugías previas en vez de tipo de glaucoma (previamente habiendo limpiado la variable cirugías)
+
 #TODO: añadir aclaracion de que pseudoexfoliativo tiene muy pocos datos realmente
+
 # parece que hay glaucomas que curan mejor que otros, el GPPA a lo mejor necesita mas tratamiento postop
 # vamos a ver si existe una correlacion sustancial entre el tipo de glaucoma y la mejoria
 # para justamente esto era el test ANOVA
@@ -339,6 +354,11 @@ SLT$enerimpac[SLT$enerimpac == ""] <- NA            # vacíos -> NA
 SLT$enerimpac <- gsub(",", ".", SLT$enerimpac)      # comas decimales -> punto
 SLT$enerimpac <- sub("[^0-9.].*$", "", SLT$enerimpac)  # corta desde el primer carácter raro
 SLT$enerimpac <- as.numeric(SLT$enerimpac) #convertimos a numero
+
+#TODO: calcular matriz de correlaciones e interpretarla. Quizás añadir test de Bartlett (en tal caso tenemos que estandarizar antes)
+
+
+
 pca <- prcomp(SLT[, c(6,8,9,11:14)], scale = TRUE, center = TRUE)
 descr(SLT)
 # "rotation": cuánto pesa cada variable original en cada componente (loadings)
@@ -357,7 +377,7 @@ var_expl
 # Varianza acumulada
 cum_var <- cumsum(var_expl)
 cum_var
-#TODO: hacer el test del det de la matriz de corr para ver si tiene sentido hacer PCA
+
 ###############################################################################
 # BLOQUE 9. GRÁFICOS DEL PCA
 # -----------------------------------------------------------------------------
